@@ -4,6 +4,9 @@ import csv
 import pandas as pd
 from helper_functions import identify_price_arbitrage
 
+DISCOUNT_RATE = 0.6
+SELL_THRU_RATE = 0.4
+
 auth = OAuth1(
     os.getenv("BRICKLINK_CONSUMER_KEY"),
     os.getenv("BRICKLINK_CONSUMER_SECRET"),
@@ -26,7 +29,10 @@ arbitrage_data = []
 for item_id in minifig_ids:
     for condition in ['N', 'U']:
         try:
-            arbitrage = identify_price_arbitrage(item_id=item_id, condition=condition)
+            arbitrage = identify_price_arbitrage(item_id=item_id, 
+                                                 condition=condition, 
+                                                 discount_rate=DISCOUNT_RATE,
+                                                 sell_thru_rate=SELL_THRU_RATE)
             if arbitrage:
                 arbitrage_data.append(arbitrage)
         except Exception as e:

@@ -15,6 +15,28 @@ BASE_URL = 'https://api.bricklink.com/api/store/v1'
 def throttle():
     time.sleep(1)
 
+def get_sell_thru_rate(item_type, item_id, condition):
+    url = f'{BASE_URL}/items/{item_type}/{item_id}/price'
+    params = {
+        'new_or_used': condition,  # 'N' for New, 'U' for Used
+        'currency_code': 'USD',
+        'guide_type': 'sold'
+    }
+    throttle()
+    response = requests.get(url, auth=auth, params=params)
+
+    if response.status_code != 200:
+        print(f"Failed to get sell-thru rate for {item_id} ({condition}: {response.status_code}")
+        return None
+
+    data = response.json()
+    items_sold = data['data']['unit_quantity']
+    items_avaliable = data['data']['total_quantity']
+    if items_avaliable == 0:
+        return None
+    return items_sold / items_avaliable
+
+
 def get_price_guide(item_type, item_id, condition, country_code=None):
     """
     Gets price guide data from BrickLink for a given item.
@@ -77,7 +99,7 @@ def get_lowest_prices(item_id, condition):
 
     return {'US': us_price, 'INTL': intl_price}
 
-def identify_price_arbitrage(item_id, condition):
+def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate):
     """
     Identify arbitrage opportunities based on the lowest prices.
     
@@ -93,16 +115,19 @@ def identify_price_arbitrage(item_id, condition):
     us_price = prices.get('US')
     intl_price = prices.get('INTL')
 
-    if us_price is None or intl_price is None:
+    calc_sell_thru_rate = get_sell_thru_rate('MINIFIG', item_id, condition)
+
+    if us_price is None or intl_price is None or calc_sell_thru_rate is None:
         return None
 
     # Arbitrage condition: international price <= 60% of US price
-    if intl_price <= 0.6 * us_price:
+    if intl_price <= discount_rate * us_price and calc_sell_thru_rate >= sell_thru_rate:
         return {
             'ItemID': item_id,
             'Condition': condition,
             'Intl Price': intl_price,
-            'US Price': us_price
+            'US Price': us_price,
+            'Sell Thru Rate': calc_sell_thru_rate
         }
     
     return None
