@@ -2,3 +2,5 @@
 raw_data/*
 processed_data/*
 arbitrage/*
+prod_scripts/__pycache__/*
+flags/*

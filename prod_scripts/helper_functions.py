@@ -2,6 +2,7 @@ import requests
 from requests_oauthlib import OAuth1
 import os
 import time
+from datetime import datetime
 
 auth = OAuth1(
     os.getenv("BRICKLINK_CONSUMER_KEY"),
@@ -13,7 +14,7 @@ auth = OAuth1(
 BASE_URL = 'https://api.bricklink.com/api/store/v1'
 
 def throttle():
-    time.sleep(1)
+    time.sleep(0.1)
 
 def get_sell_thru_rate(item_type, item_id, condition):
     url = f'{BASE_URL}/items/{item_type}/{item_id}/price'
@@ -127,7 +128,8 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate):
             'Condition': condition,
             'Intl Price': intl_price,
             'US Price': us_price,
-            'Sell Thru Rate': calc_sell_thru_rate
+            'Sell Thru Rate': calc_sell_thru_rate,
+            'Timestamp': datetime.utcnow().isoformat()
         }
     
     return None
