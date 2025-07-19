@@ -4,6 +4,8 @@ import csv
 import pandas as pd
 from datetime import datetime
 from helper_functions import identify_price_arbitrage
+from dotenv import load_dotenv
+load_dotenv()
 
 DISCOUNT_RATE = 0.6
 SELL_THRU_RATE = 0.4

@@ -15,7 +15,7 @@ def api_limit_hit_today():
 
 def run_main_script():
     """Run the main arbitrage script once."""
-    result = subprocess.run(["python", "prod_scripts/run_minifigures.py"])
+    result = subprocess.run(["python3", "prod_scripts/run_minifigures.py"])
     return result.returncode == 0
 
 if __name__ == "__main__":
