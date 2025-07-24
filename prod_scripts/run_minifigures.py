@@ -47,7 +47,7 @@ batch_size = 100
 arbitrage_data = []
 api_limit_hit = False
 
-# Only process a batch of 100, wrapping around if needed
+# Only process a batch, wrapping around if needed
 for offset in range(batch_size):
     idx = (start_idx + offset) % n
     item_id = minifig_ids[idx]

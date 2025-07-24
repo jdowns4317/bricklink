@@ -63,9 +63,12 @@ def get_price_guide(item_type, item_id, condition, country_code=None):
     data = response.json()
     listings = data.get('data', {}).get('price_detail', [])
 
-    if not listings:
-        print(f"No listings found for {item_id} (country={country_code})")
+    if listings: 
+        print(f"Found {len(listings)} listings for {item_id} (country={country_code}, condition={condition})")
+    else:
+        print(f"No listings found for {item_id} (country={country_code}, condition={condition})")
         return
+
 
     # Sort listings numerically by unit_price (as float)
     listings_sorted = sorted(listings, key=lambda x: float(x['unit_price']))
