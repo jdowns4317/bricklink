@@ -105,3 +105,24 @@ if not df_arbitrage.empty:
     print(f"Found {len(df_new)} arbitrage opportunities. Appended to CSV.")
 else:
     print("No new arbitrage opportunities found.")
+
+# Update API call count
+api_call_count_file = "flags/api_call_count.txt"
+today_str = datetime.now().strftime("%Y-%m-%d")
+calls_today = 0
+
+if os.path.exists(api_call_count_file):
+    try:
+        with open(api_call_count_file, "r") as f:
+            lines = f.readlines()
+        file_date = lines[0].strip() if len(lines) > 0 else ""
+        file_count = int(lines[1].strip()) if len(lines) > 1 and lines[1].strip().isdigit() else 0
+        if file_date == today_str:
+            calls_today = file_count
+    except Exception:
+        calls_today = 0
+
+calls_today += batch_size * 2 * 3  # 100 items, 2 conditions (N, U), 3 calls per item
+
+with open(api_call_count_file, "w") as f:
+    f.write(f"{today_str}\n{calls_today}\n")
