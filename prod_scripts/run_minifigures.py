@@ -10,6 +10,7 @@ load_dotenv()
 
 DISCOUNT_RATE = 0.6
 SELL_THRU_RATE = 0.4
+MIN_INTL_QUANTITY = 1 
 
 auth = OAuth1(
     os.getenv("BRICKLINK_CONSUMER_KEY"),
@@ -51,7 +52,8 @@ for offset in range(batch_size):
             arbitrage = identify_price_arbitrage(item_id=item_id, 
                                                  condition=condition, 
                                                  discount_rate=DISCOUNT_RATE,
-                                                 sell_thru_rate=SELL_THRU_RATE)
+                                                 sell_thru_rate=SELL_THRU_RATE,
+                                                 min_intl_quantity=MIN_INTL_QUANTITY)
             if arbitrage:
                 arbitrage_data.append(arbitrage)
         except Exception as e:
@@ -80,7 +82,7 @@ csv_path = "arbitrage/minifig_opportunities.csv"
 if os.path.exists(csv_path):
     df_existing = pd.read_csv(csv_path)
 else:
-    df_existing = pd.DataFrame(columns=["ItemID", "Condition", "Intl Price", "US Price", "Sell Thru Rate", "Timestamp"])
+    df_existing = pd.DataFrame(columns=["ItemID", "Condition", "Intl Price", "US Price", "Intl Quantity", "Sell Thru Rate", "Timestamp"])
 
 # Remove duplicates from existing
 if not df_arbitrage.empty:

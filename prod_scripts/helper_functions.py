@@ -96,16 +96,18 @@ def get_lowest_prices(item_id, condition):
     # Get International price (any country except US)
     intl_listings = get_price_guide('MINIFIG', item_id, condition)
     intl_price = None
+    intl_quantity = None
     if intl_listings:
         # Find the first listing that is NOT from the US
         for listing in intl_listings:
             if listing.get('seller_country_code', '') != 'US':
                 intl_price = float(listing['unit_price'])
+                intl_quantity = int(intl_listings[0]['quantity'])
                 break
 
-    return {'US': us_price, 'INTL': intl_price}
+    return {'US': us_price, 'INTL': intl_price, 'INTL Quantity': intl_quantity}
 
-def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate):
+def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, min_intl_quantity=1):
     """
     Identify arbitrage opportunities based on the lowest prices.
     
@@ -120,6 +122,7 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate):
     # print(f"Prices for {item_id} ({condition}): {prices}")
     us_price = prices.get('US')
     intl_price = prices.get('INTL')
+    intl_quantity = prices.get('INTL Quantity')
 
     calc_sell_thru_rate = get_sell_thru_rate('MINIFIG', item_id, condition)
 
@@ -127,12 +130,13 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate):
         return None
 
     # Arbitrage condition: international price <= 60% of US price
-    if intl_price <= discount_rate * us_price and calc_sell_thru_rate >= sell_thru_rate:
+    if intl_price <= discount_rate * us_price and calc_sell_thru_rate >= sell_thru_rate and intl_quantity >= min_intl_quantity:
         return {
             'ItemID': item_id,
             'Condition': condition,
             'Intl Price': intl_price,
             'US Price': us_price,
+            'Intl Quantity': intl_quantity,
             'Sell Thru Rate': calc_sell_thru_rate,
             'Timestamp': datetime.utcnow().isoformat()
         }

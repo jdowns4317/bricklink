@@ -2,6 +2,8 @@ import requests
 from requests_oauthlib import OAuth1
 import time
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 auth = OAuth1(
     os.getenv("BRICKLINK_CONSUMER_KEY"),
@@ -21,6 +23,8 @@ def get_minifig_data(minifig_id):
         return response.json()["data"]
     else:
         print(f"Error fetching {minifig_id}: {response.status_code}")
+
+
         return None
 
 if __name__ == "__main__":

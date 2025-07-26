@@ -37,7 +37,8 @@ def run_main_script(sw_flag):
 
 if __name__ == "__main__":
     sw_flag = "-sw" in sys.argv
-    print("Only doing starwars minifigs")
+    if sw_flag:
+        print("Only doing starwars minifigs")
     while not api_limit_hit_today():
         print("Running arbitrage script...")
         success = run_main_script(sw_flag)

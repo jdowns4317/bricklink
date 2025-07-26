@@ -2,6 +2,9 @@ import requests
 from requests_oauthlib import OAuth1
 import time
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 
 auth = OAuth1(
     os.getenv("BRICKLINK_CONSUMER_KEY"),
