@@ -8,3 +8,5 @@ Steps to setup:
 To run, in the main folder do "python run.py". This will scan for minifigs in batches of 100, 
 appending to arbitrage/minifig_opprotunities.csv, and then running another batch until out of 
 API calls for the day.
+
+If you would like to only scan star wars minifigs, run "python run.py -sw"

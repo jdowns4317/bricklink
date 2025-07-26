@@ -20,25 +20,16 @@ auth = OAuth1(
 
 minifig_ids = []
 working_file = 'processed_data/all_minifigs.csv'
+progress_file = "flags/minifig_last_index.txt"
+
 if "-sw" in sys.argv:
     working_file = 'processed_data/star_wars_minifigs.csv'
+    progress_file = "flags/sw_minifig_last_index.txt"
 with open(working_file, newline='') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         minifig_ids.append(row['item_id'])
 
-# Progress tracking
-progress_file = "flags/minifig_last_index.txt"
-api_limit_flag_file = "flags/minifig_api_limit_date.txt"
-
-# Check API limit flag
-today_str = datetime.now().strftime("%Y-%m-%d")
-if os.path.exists(api_limit_flag_file):
-    with open(api_limit_flag_file, "r") as f:
-        last_limit_date = f.read().strip()
-    if last_limit_date == today_str:
-        print("API limit was already hit today. Exiting early.")
-        exit(0)
 
 if os.path.exists(progress_file):
     with open(progress_file, "r") as f:
@@ -68,8 +59,6 @@ for offset in range(batch_size):
                 print(f"API limit hit at index {idx}. Saving progress and flag.")
                 with open(progress_file, "w") as f:
                     f.write(str(idx))
-                with open(api_limit_flag_file, "w") as f:
-                    f.write(today_str)
                 api_limit_hit = True
                 break
             else:
