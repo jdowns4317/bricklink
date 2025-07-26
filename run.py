@@ -1,6 +1,7 @@
 import subprocess
 import time
 import os
+import sys
 from datetime import datetime
 
 FLAG_FILE = "flags/api_call_count.txt"
@@ -26,15 +27,20 @@ def api_limit_hit_today():
         return True
     return False
 
-def run_main_script():
-    """Run the main arbitrage script once."""
-    result = subprocess.run(["python3", "prod_scripts/run_minifigures.py"])
+def run_main_script(sw_flag):
+    """Run the main arbitrage script once, optionally with -sw."""
+    cmd = ["python3", "prod_scripts/run_minifigures.py"]
+    if sw_flag:
+        cmd.append("-sw")
+    result = subprocess.run(cmd)
     return result.returncode == 0
 
 if __name__ == "__main__":
+    sw_flag = "-sw" in sys.argv
+    print("Only doing starwars minifigs")
     while not api_limit_hit_today():
         print("Running arbitrage script...")
-        success = run_main_script()
+        success = run_main_script(sw_flag)
         if not success:
             print("Error occurred while running the script. Exiting.")
             break

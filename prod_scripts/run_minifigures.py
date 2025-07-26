@@ -1,6 +1,7 @@
 from requests_oauthlib import OAuth1
 import os
 import csv
+import sys
 import pandas as pd
 from datetime import datetime
 from helper_functions import identify_price_arbitrage
@@ -18,7 +19,10 @@ auth = OAuth1(
 )
 
 minifig_ids = []
-with open('processed_data/all_minifigs.csv', newline='') as csvfile:
+working_file = 'processed_data/all_minifigs.csv'
+if "-sw" in sys.argv:
+    working_file = 'processed_data/star_wars_minifigs.csv'
+with open(working_file, newline='') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         minifig_ids.append(row['item_id'])
