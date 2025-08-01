@@ -107,7 +107,7 @@ def get_lowest_prices(item_id, condition):
 
     return {'US': us_price, 'INTL': intl_price, 'INTL Quantity': intl_quantity}
 
-def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, min_intl_quantity=1):
+def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, min_intl_quantity=1, min_price=0):
     """
     Identify arbitrage opportunities based on the lowest prices.
     
@@ -130,7 +130,7 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
         return None
 
     # Arbitrage condition: international price <= 60% of US price
-    if intl_price <= discount_rate * us_price and calc_sell_thru_rate >= sell_thru_rate and intl_quantity >= min_intl_quantity:
+    if intl_price <= discount_rate * us_price and calc_sell_thru_rate >= sell_thru_rate and intl_quantity >= min_intl_quantity and intl_price >= min_price:
         return {
             'ItemID': item_id,
             'Condition': condition,

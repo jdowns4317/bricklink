@@ -29,7 +29,7 @@ def api_limit_hit_today():
 
 def run_main_script(sw_flag):
     """Run the main arbitrage script once, optionally with -sw."""
-    cmd = ["python3", "prod_scripts/run_minifigures.py"]
+    cmd = ["python3", "prod_scripts/minifig_batch.py"]
     if sw_flag:
         cmd.append("-sw")
     result = subprocess.run(cmd)

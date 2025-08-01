@@ -11,6 +11,7 @@ load_dotenv()
 DISCOUNT_RATE = 0.6
 SELL_THRU_RATE = 0.4
 MIN_INTL_QUANTITY = 1 
+MIN_PRICE = 0.25
 
 auth = OAuth1(
     os.getenv("BRICKLINK_CONSUMER_KEY"),
@@ -55,7 +56,8 @@ for offset in range(batch_size):
                                                  condition=condition, 
                                                  discount_rate=DISCOUNT_RATE,
                                                  sell_thru_rate=SELL_THRU_RATE,
-                                                 min_intl_quantity=MIN_INTL_QUANTITY)
+                                                 min_intl_quantity=MIN_INTL_QUANTITY,
+                                                 min_price=MIN_PRICE)
             if arbitrage:
                 arbitrage_data.append(arbitrage)
         except Exception as e:
