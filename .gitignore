@@ -14,3 +14,4 @@ arbitrage/*
 !arbitrage/
 
 prod_scripts/__pycache__/*
+test_scripts/__pycache__/*

@@ -20,7 +20,9 @@ auth = OAuth1(
 )
 
 minifig_ids = []
-working_file = 'processed_data/all_minifigs.csv'
+working_file = 'processed_data/all_minifigs_filtered.csv'
+if os.path.exists('processed_data/all_minifigs_filtered.csv'):
+    working_file = 'processed_data/all_minifigs_filtered.csv'
 progress_file = "flags/minifig_last_index.txt"
 
 if "-sw" in sys.argv:
