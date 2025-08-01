@@ -96,7 +96,7 @@ def main():
     print(f'\nDone. Filtered file written to {OUTPUT_CSV}')
 
 if __name__ == '__main__':
-    # main()
+    main()
     # Compare lengths of input and output files
     try:
         input_len = len(pd.read_csv(INPUT_CSV, dtype=str))
