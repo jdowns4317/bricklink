@@ -10,3 +10,4 @@ appending to arbitrage/minifig_opprotunities.csv, and then running another batch
 API calls for the day.
 
 If you would like to only scan star wars minifigs, run "python run.py -sw"
+If you would like to only scan super hero minifigs, run "python run.py -sh"
