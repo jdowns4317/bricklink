@@ -75,17 +75,19 @@ def get_price_guide(item_type, item_id, condition, country_code=None):
 
     return listings_sorted
 
-def get_lowest_prices(item_id, condition):
+def get_lowest_prices(item_id, condition, min_intl_quantity=1, min_price=0):
     """
     Fetch the lowest prices for a minifigure by condition (New or Used),
-    and return the cheapest price in the US and abroad.
+    and return the cheapest price in the US and abroad that meets all requirements.
     
     Args:
         item_id (str): e.g. "sw123"
         condition (str): "N" or "U" for New or Used
+        min_intl_quantity (int): Minimum quantity required for international listing
+        min_price (float): Minimum price required for international listing
     
     Returns:
-        dict: { 'US': float or None, 'INTL': float or None }
+        dict: { 'US': float or None, 'INTL': float or None, 'INTL Quantity': int or None }
     """
     # Get US price
     us_listings = get_price_guide('MINIFIG', item_id, condition, country_code='US')
@@ -97,13 +99,20 @@ def get_lowest_prices(item_id, condition):
     intl_listings = get_price_guide('MINIFIG', item_id, condition)
     intl_price = None
     intl_quantity = None
+    
     if intl_listings:
-        # Find the first listing that is NOT from the US
+        # Find the first listing that is NOT from the US AND meets all requirements
         for listing in intl_listings:
             if listing.get('seller_country_code', '') != 'US':
-                intl_price = float(listing['unit_price'])
-                intl_quantity = int(intl_listings[0]['quantity'])
-                break
+                listing_price = float(listing['unit_price'])
+                listing_quantity = int(listing['quantity'])
+                
+                # Check if this listing meets all requirements
+                if (listing_quantity >= min_intl_quantity and 
+                    listing_price >= min_price):
+                    intl_price = listing_price
+                    intl_quantity = listing_quantity
+                    break
 
     return {'US': us_price, 'INTL': intl_price, 'INTL Quantity': intl_quantity}
 
@@ -114,11 +123,15 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
     Args:
         item_id (str): e.g. "sw123"
         condition (str): "N" or "U" for New or Used
+        discount_rate (float): Maximum ratio of international to US price (e.g., 0.6 for 60%)
+        sell_thru_rate (float): Minimum sell-through rate required
+        min_intl_quantity (int): Minimum quantity required for international listing
+        min_price (float): Minimum price required for international listing
     
     Returns:
         dict: Arbitrage opportunity data if found, else None
     """
-    prices = get_lowest_prices(item_id, condition)
+    prices = get_lowest_prices(item_id, condition, min_intl_quantity, min_price)
     # print(f"Prices for {item_id} ({condition}): {prices}")
     us_price = prices.get('US')
     intl_price = prices.get('INTL')
@@ -129,8 +142,8 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
     if us_price is None or intl_price is None or calc_sell_thru_rate is None:
         return None
 
-    # Arbitrage condition: international price <= 60% of US price
-    if intl_price <= discount_rate * us_price and calc_sell_thru_rate >= sell_thru_rate and intl_quantity >= min_intl_quantity and intl_price >= min_price:
+    # Arbitrage condition: international price meets discount rate AND sell-through rate requirement
+    if intl_price <= discount_rate * us_price and calc_sell_thru_rate >= sell_thru_rate:
         return {
             'ItemID': item_id,
             'Condition': condition,
