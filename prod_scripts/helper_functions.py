@@ -34,7 +34,6 @@ def get_sell_thru_rate(item_type, item_id, condition):
 
     data = response.json()
     six_months = data['data']['total_quantity']
-    print(f"Six months for {item_id} ({condition}): {six_months}")
 
     params = {
         'new_or_used': condition,  # 'N' for New, 'U' for Used
@@ -50,7 +49,6 @@ def get_sell_thru_rate(item_type, item_id, condition):
 
     data = response.json()
     full_stock = data['data']['total_quantity']
-    print(f"Full stock for {item_id} ({condition}): {full_stock}")
 
     if full_stock == 0:
         return None
@@ -167,7 +165,7 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
             'Intl Price': intl_price,
             'US Price': us_price,
             'Intl Quantity': intl_quantity,
-            'Sell Thru Rate': calc_sell_thru_rate,
+            'Sell Thru Rate': round(calc_sell_thru_rate, 2),
             'Timestamp': datetime.utcnow().isoformat()
         }
     
