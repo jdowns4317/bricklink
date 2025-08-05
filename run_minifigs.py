@@ -22,7 +22,7 @@ def api_limit_hit_today():
         file_count = 0
 
     # If today's date and count + 600 exceeds API_LIMIT, treat as limit hit
-    minifig_calls_per_run = 600 # batch size of 100 * 2 (N or U) * 3 calls per item
+    minifig_calls_per_run = 800 # batch size of 100 * 2 (N or U) * 5 calls per item
     if file_date == today and file_count + minifig_calls_per_run > API_LIMIT:
         return True
     return False

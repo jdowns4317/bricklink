@@ -13,13 +13,19 @@ auth = OAuth1(
     os.getenv("BRICKLINK_TOKEN_SECRET")
 )
 
-minifig_ids = ["sw0002"]
+minifig_ids = ["sw0239"]
 
 BASE_URL = 'https://api.bricklink.com/api/store/v1'
 
 def get_minifig_data(minifig_id):
     url = f'{BASE_URL}/items/MINIFIG/{minifig_id}/price'
-    response = requests.get(url, auth=auth)
+    condition = 'U'
+    params = {
+        'new_or_used': condition,  # 'N' for New, 'U' for Used
+        'currency_code': 'USD',
+        'guide_type': 'stock'
+    }
+    response = requests.get(url, auth=auth, params=params)
     if response.status_code == 200:
         return response.json()["data"]
     else:

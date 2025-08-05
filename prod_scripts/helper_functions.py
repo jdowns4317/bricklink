@@ -33,11 +33,28 @@ def get_sell_thru_rate(item_type, item_id, condition):
         return None
 
     data = response.json()
-    items_sold = data['data']['unit_quantity']
-    items_avaliable = data['data']['total_quantity']
-    if items_avaliable == 0:
+    six_months = data['data']['total_quantity']
+    print(f"Six months for {item_id} ({condition}): {six_months}")
+
+    params = {
+        'new_or_used': condition,  # 'N' for New, 'U' for Used
+        'currency_code': 'USD',
+        'guide_type': 'stock'
+    }
+    throttle()
+    response = requests.get(url, auth=auth, params=params)
+
+    if response.status_code != 200:
+        print(f"Failed to get sell-thru rate for {item_id} ({condition}: {response.status_code}")
         return None
-    return items_sold / items_avaliable
+
+    data = response.json()
+    full_stock = data['data']['total_quantity']
+    print(f"Full stock for {item_id} ({condition}): {full_stock}")
+
+    if full_stock == 0:
+        return None
+    return six_months / full_stock
 
 
 def get_price_guide(item_type, item_id, condition, country_code=None):
