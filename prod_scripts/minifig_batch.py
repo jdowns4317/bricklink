@@ -32,6 +32,9 @@ if "-sw" in sys.argv:
 elif "-sh" in sys.argv:
     working_file = 'processed_data/super_hero_minifigs.csv'
     progress_file = "flags/sh_minifig_last_index.txt"
+elif "-col" in sys.argv:
+    working_file = 'processed_data/collectible_minifigs.csv'
+    progress_file = "flags/col_minifig_last_index.txt"
 with open(working_file, newline='') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:

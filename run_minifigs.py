@@ -34,7 +34,7 @@ def api_limit_hit_today():
                 return True
     return False
 
-def run_main_script(sw_flag, sh_flag, parts_flag):
+def run_main_script(sw_flag, sh_flag, col_flag, parts_flag):
     """Run the main arbitrage script once, optionally with -sw or -sh."""
     if parts_flag:
         cmd = ["python3", "prod_scripts/minifig_parts_batch.py"]
@@ -44,22 +44,27 @@ def run_main_script(sw_flag, sh_flag, parts_flag):
         cmd.append("-sw")
     elif sh_flag:
         cmd.append("-sh")
+    elif col_flag:
+        cmd.append("-col")
     result = subprocess.run(cmd)
     return result.returncode == 0
 
 if __name__ == "__main__":
     sw_flag = "-sw" in sys.argv
     sh_flag = "-sh" in sys.argv
+    col_flag = "-col" in sys.argv
     parts_flag = "-parts" in sys.argv
     if sw_flag:
         print("Only doing starwars minifigs")
     elif sh_flag:
         print("Only doing super hero minifigs")
+    elif col_flag:
+        print("Only doing collectible minifigs")
     if parts_flag:
         print("Considering parts")
     while not api_limit_hit_today():
         print("Running arbitrage script...")
-        success = run_main_script(sw_flag, sh_flag, parts_flag)
+        success = run_main_script(sw_flag, sh_flag, col_flag, parts_flag)
         if not success:
             print("Error occurred while running the script. Exiting.")
             break
