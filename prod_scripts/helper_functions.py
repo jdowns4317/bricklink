@@ -15,7 +15,20 @@ auth = OAuth1(
 
 BASE_URL = 'https://api.bricklink.com/api/store/v1'
 
+# Global API call counter
+api_call_counter = 0
+
+def reset_api_counter():
+    global api_call_counter
+    api_call_counter = 0
+
+def get_api_call_count():
+    global api_call_counter
+    return api_call_counter
+
 def throttle():
+    global api_call_counter
+    api_call_counter += 1
     time.sleep(0.1)
 
 def get_sell_thru_rate(item_type, item_id, condition):
@@ -55,10 +68,11 @@ def get_sell_thru_rate(item_type, item_id, condition):
     return six_months / full_stock
 
 
-def get_price_guide(item_type, item_id, condition, country_code=None):
+def get_price_guide(item_type, item_id, condition, country_code=None, color_id=None):
     """
     Gets price guide data from BrickLink for a given item.
     If country_code is provided, only listings from that country are returned.
+    If color_id is provided, only listings for that color are returned.
     """
     url = f'{BASE_URL}/items/{item_type}/{item_id}/price'
     params = {
@@ -68,6 +82,8 @@ def get_price_guide(item_type, item_id, condition, country_code=None):
     }
     if country_code:
         params['country_code'] = country_code
+    if color_id:
+        params['color_id'] = color_id
     throttle()
     response = requests.get(url, auth=auth, params=params)
 
@@ -76,7 +92,10 @@ def get_price_guide(item_type, item_id, condition, country_code=None):
         return None
 
     data = response.json()
-    listings = data.get('data', {}).get('price_detail', [])
+    # get all tiers…
+    all_tiers = data.get('data', {}).get('price_detail', [])
+    # …but only keep those that actually ship to you
+    listings = [tier for tier in all_tiers if tier.get('shipping_available')]
 
     if listings: 
         print(f"Found {len(listings)} listings for {item_id} (country={country_code}, condition={condition})")
@@ -131,6 +150,50 @@ def get_lowest_prices(item_id, condition, min_intl_quantity=1, min_price=0):
 
     return {'US': us_price, 'INTL': intl_price, 'INTL Quantity': intl_quantity}
 
+def fetch_minifig_parts_with_colors(item_id):
+    """
+    Fetches all parts for the given minifigure and returns
+    a list of (part_no, color_id) tuples.
+    
+    :param item_id: e.g. "sw0239"
+    :return: [("970c00", 48), ("42446", 85), ...]
+    """
+    url = f"{BASE_URL}/items/MINIFIG/{item_id}/subsets"
+    params = {"break_minifigs": "true"}
+    throttle()  # Count this API call
+    resp = requests.get(url, auth=auth, params=params)
+    if resp.status_code != 200:
+        raise RuntimeError(f"Failed to fetch subsets for {item_id}: HTTP {resp.status_code}")
+
+    data = resp.json().get("data", [])
+    if not data:
+        return []
+
+    parts = []
+    for subset in data:
+        for entry in subset.get("entries", []):
+            item = entry.get("item", {})
+            no = item.get("no")
+            color_id = entry.get("color_id")
+            # only include entries where we got both a part no and a color
+            if no is not None and color_id is not None:
+                parts.append((no, color_id))
+
+    return parts
+
+
+def get_prices_parts(item_id, condition):
+    """
+    Get the prices for a minifig and its parts that meet the specified thresholds.
+    """
+    part_ids = fetch_minifig_parts_with_colors(item_id)
+    all_minifigs = get_price_guide('MINIFIG', item_id, condition)
+    part_listings = {}
+    for (part_id, color_id) in part_ids:
+        part_listings[part_id] = get_price_guide('PART', part_id, condition, color_id=color_id)
+    return (all_minifigs, part_listings)
+
+
 def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, min_intl_quantity=1, min_price=0):
     """
     Identify arbitrage opportunities based on the lowest prices.
@@ -147,7 +210,6 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
         dict: Arbitrage opportunity data if found, else None
     """
     prices = get_lowest_prices(item_id, condition, min_intl_quantity, min_price)
-    # print(f"Prices for {item_id} ({condition}): {prices}")
     us_price = prices.get('US')
     intl_price = prices.get('INTL')
     intl_quantity = prices.get('INTL Quantity')
@@ -170,3 +232,68 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
         }
     
     return None
+
+def identify_price_arbitrage_parts(item_id, condition, discount_rate, sell_thru_rate_minifig, sell_thru_rate_part, min_minifig_quantity, min_minifig_price):
+    """
+    Identify arbitrage opportunities by breaking minifigs into parts or vice versa.
+    Returns: (opportunities_list, api_call_count)
+    """
+    all_minifigs, parts_dict = get_prices_parts(item_id, condition)
+    if not all_minifigs or float(all_minifigs[0]['unit_price']) < min_minifig_price:
+        return None, get_api_call_count()
+    
+    # check break apart first
+    dicts_to_return = []
+    for minifig in all_minifigs:
+        if int(minifig['quantity']) >= min_minifig_quantity:
+            total_parts_price = 0
+            parts = []
+            for part_id, part_listings in parts_dict.items():
+                if part_listings and len(part_listings) > 0:
+                    part_sell_thru = get_sell_thru_rate('PART', part_id, condition)
+                    if part_sell_thru and part_sell_thru >= sell_thru_rate_part:
+                        total_parts_price += float(part_listings[0]['unit_price'])
+                        parts.append(part_id)
+            if float(minifig['unit_price']) <= discount_rate * total_parts_price:
+                dicts_to_return.append({
+                    'ItemID': item_id,
+                    'Condition': condition,
+                    'Break or Build': "Break",
+                    'Parts Considered': ", ".join(parts),
+                    'Minifig Price': float(minifig['unit_price']),
+                    'Minifig Quantity': int(minifig['quantity']),
+                    'Parts Combined Price': total_parts_price
+                })
+        break
+
+    # check build next
+    minifig_price = float(all_minifigs[0]['unit_price'])
+    minifig_sell_thru = get_sell_thru_rate('MINIFIG', item_id, condition)
+    if minifig_sell_thru and minifig_sell_thru >= sell_thru_rate_minifig:
+        total_build_cost = 0
+        parts_used = []
+        failed_to_find = False
+        for part_id, part_listings in parts_dict.items():
+            if failed_to_find:
+                break
+            if part_listings and len(part_listings) > 0:
+                for i in range(len(part_listings)):
+                    part_entry = part_listings[i]
+                    if int(part_entry['quantity']) >= min_minifig_quantity:
+                        total_build_cost += float(part_entry['unit_price'])
+                        parts_used.append(part_id)
+                        break
+                    elif i == len(part_listings) - 1:
+                        failed_to_find = True
+        if total_build_cost > 0 and total_build_cost <= discount_rate * minifig_price and not failed_to_find:
+            dicts_to_return.append({
+                    'ItemID': item_id,
+                    'Condition': condition,
+                    'Break or Build': "Build",
+                    'Parts Considered': ", ".join(parts_used),
+                    'Minifig Price': minifig_price,
+                    'Minifig Quantity': min_minifig_quantity,
+                    'Parts Combined Price': total_build_cost
+            })
+    return (dicts_to_return if dicts_to_return else None), get_api_call_count()
+

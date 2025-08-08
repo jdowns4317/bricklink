@@ -21,7 +21,7 @@ auth = OAuth1(
 )
 
 minifig_ids = []
-working_file = 'processed_data/all_minifigs_filtered.csv'
+working_file = 'processed_data/all_minifigs.csv'
 if os.path.exists('processed_data/all_minifigs_filtered.csv'):
     working_file = 'processed_data/all_minifigs_filtered.csv'
 progress_file = "flags/minifig_last_index.txt"
@@ -124,7 +124,7 @@ if os.path.exists(api_call_count_file):
     except Exception:
         calls_today = 0
 
-calls_today += batch_size * 2 * 3  # 100 items, 2 conditions (N, U), 3 calls per item
+calls_today += batch_size * 2 * 4  # 100 items, 2 conditions (N, U), 4 calls per item
 
 with open(api_call_count_file, "w") as f:
     f.write(f"{today_str}\n{calls_today}\n")
