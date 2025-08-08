@@ -49,7 +49,7 @@ else:
     start_idx = 0
 
 n = len(minifig_ids)
-batch_size = 100
+batch_size = 10
 arbitrage_data = []
 api_limit_hit = False
 
@@ -70,7 +70,7 @@ if os.path.exists(api_call_count_file):
         calls_today = 0
 
 # Check if we're already close to the API limit
-if calls_today > 4500:  # Conservative threshold
+if calls_today > 4800:  # Conservative threshold
     print(f"Already at {calls_today} API calls today. Stopping to avoid exceeding 5000 limit.")
     sys.exit(0)
 
@@ -83,7 +83,7 @@ for offset in range(batch_size):
     item_id = minifig_ids[idx]
     for condition in ['N', 'U']:
         try:
-            arbitrage, api_calls = identify_price_arbitrage_parts(item_id=item_id, 
+            arbitrage = identify_price_arbitrage_parts(item_id=item_id, 
                                                  condition=condition, 
                                                  discount_rate=DISCOUNT_RATE,
                                                  sell_thru_rate_minifig=SELL_THRU_RATE_MINIFIG,
@@ -138,7 +138,8 @@ if os.path.exists(csv_path):
 else:
     # Define columns based on the expected structure
     expected_columns = ["ItemID", "Condition", "Break or Build", "Parts Considered", 
-                       "Minifig Price", "Minifig Quantity", "Parts Combined Price"]
+                       "Minifig Price", "Minifig Sell Thru Rate", "Minifig Quantity", 
+                       "Parts Combined Price"]
     df_existing = pd.DataFrame(columns=expected_columns)
 
 # Remove duplicates from existing
@@ -158,12 +159,11 @@ if not df_arbitrage.empty:
 else:
     print("No new arbitrage opportunities found.")
 
-# Update API call count (reuse the calls_today variable from earlier)
-
-# Get actual API calls made during this batch
+# Update API call count using global counter
 api_calls_this_batch = get_api_call_count()
 calls_today += api_calls_this_batch
 print(f"API calls made in this batch: {api_calls_this_batch}")
 
+# Write updated count to file
 with open(api_call_count_file, "w") as f:
     f.write(f"{today_str}\n{calls_today}\n")

@@ -97,9 +97,9 @@ def get_price_guide(item_type, item_id, condition, country_code=None, color_id=N
     # …but only keep those that actually ship to you
     listings = [tier for tier in all_tiers if tier.get('shipping_available')]
 
-    if listings: 
+    if listings and item_type != "PART": 
         print(f"Found {len(listings)} listings for {item_id} (country={country_code}, condition={condition})")
-    else:
+    elif item_type != "PART":
         print(f"No listings found for {item_id} (country={country_code}, condition={condition})")
         return
 
@@ -224,8 +224,8 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
         return {
             'ItemID': item_id,
             'Condition': condition,
-            'Intl Price': intl_price,
-            'US Price': us_price,
+            'Intl Price': round(intl_price, 2),
+            'US Price': round(us_price, 2),
             'Intl Quantity': intl_quantity,
             'Sell Thru Rate': round(calc_sell_thru_rate, 2),
             'Timestamp': datetime.utcnow().isoformat()
@@ -236,12 +236,13 @@ def identify_price_arbitrage(item_id, condition, discount_rate, sell_thru_rate, 
 def identify_price_arbitrage_parts(item_id, condition, discount_rate, sell_thru_rate_minifig, sell_thru_rate_part, min_minifig_quantity, min_minifig_price):
     """
     Identify arbitrage opportunities by breaking minifigs into parts or vice versa.
-    Returns: (opportunities_list, api_call_count)
+    Returns: opportunities_list or None
     """
+    minifig_sell_thru = get_sell_thru_rate('MINIFIG', item_id, condition)
     all_minifigs, parts_dict = get_prices_parts(item_id, condition)
-    if not all_minifigs or float(all_minifigs[0]['unit_price']) < min_minifig_price:
-        return None, get_api_call_count()
-    
+    if not all_minifigs or float(all_minifigs[0]['unit_price']) < min_minifig_price or not minifig_sell_thru:
+        return None
+
     # check break apart first
     dicts_to_return = []
     for minifig in all_minifigs:
@@ -260,16 +261,17 @@ def identify_price_arbitrage_parts(item_id, condition, discount_rate, sell_thru_
                     'Condition': condition,
                     'Break or Build': "Break",
                     'Parts Considered': ", ".join(parts),
-                    'Minifig Price': float(minifig['unit_price']),
+                    'Minifig Price': round(float(minifig['unit_price']), 2),
+                    'Minifig Sell Thru Rate': round(minifig_sell_thru, 2),
                     'Minifig Quantity': int(minifig['quantity']),
-                    'Parts Combined Price': total_parts_price
+                    'Parts Combined Price': round(total_parts_price, 2)
                 })
         break
 
     # check build next
     minifig_price = float(all_minifigs[0]['unit_price'])
-    minifig_sell_thru = get_sell_thru_rate('MINIFIG', item_id, condition)
-    if minifig_sell_thru and minifig_sell_thru >= sell_thru_rate_minifig:
+    
+    if minifig_sell_thru >= sell_thru_rate_minifig:
         total_build_cost = 0
         parts_used = []
         failed_to_find = False
@@ -291,9 +293,10 @@ def identify_price_arbitrage_parts(item_id, condition, discount_rate, sell_thru_
                     'Condition': condition,
                     'Break or Build': "Build",
                     'Parts Considered': ", ".join(parts_used),
-                    'Minifig Price': minifig_price,
+                    'Minifig Price': round(minifig_price, 2),
+                    'Minifig Sell Thru Rate': round(minifig_sell_thru, 2),
                     'Minifig Quantity': min_minifig_quantity,
-                    'Parts Combined Price': total_build_cost
+                    'Parts Combined Price': round(total_build_cost, 2)
             })
-    return (dicts_to_return if dicts_to_return else None), get_api_call_count()
+    return dicts_to_return if dicts_to_return else None
 

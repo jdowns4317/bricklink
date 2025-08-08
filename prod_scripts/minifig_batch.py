@@ -48,7 +48,7 @@ else:
     start_idx = 0
 
 n = len(minifig_ids)
-batch_size = 100
+batch_size = 25
 arbitrage_data = []
 api_limit_hit = False
 
@@ -127,7 +127,7 @@ if os.path.exists(api_call_count_file):
     except Exception:
         calls_today = 0
 
-calls_today += batch_size * 2 * 4  # 100 items, 2 conditions (N, U), 4 calls per item
+calls_today += batch_size * 2 * 4  # batch size items, 2 conditions (N, U), 4 calls per item
 
 with open(api_call_count_file, "w") as f:
     f.write(f"{today_str}\n{calls_today}\n")
